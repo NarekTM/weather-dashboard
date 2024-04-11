@@ -1,7 +1,9 @@
 package com.narektm.weatherdashboard.service.country;
 
+import com.narektm.weatherdashboard.dto.CountryDto;
 import com.narektm.weatherdashboard.entity.CountryEntity;
 import com.narektm.weatherdashboard.repository.CountryRepository;
+import com.narektm.weatherdashboard.service.converter.CountryConverter;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,12 +13,22 @@ public class CountryService {
 
     private final CountryRepository countryRepository;
 
-    public CountryService(CountryRepository countryRepository) {
+    private final CountryConverter countryConverter;
+
+    public CountryService(CountryRepository countryRepository,
+                          CountryConverter countryConverter) {
         this.countryRepository = countryRepository;
+        this.countryConverter = countryConverter;
     }
 
     public List<CountryEntity> getAllCountries() {
         return countryRepository.findAll();
+    }
+
+    public List<CountryDto> getAllActiveCountries() {
+        return countryRepository.findAllByActiveIsTrue().stream()
+                .map(countryConverter::toDto)
+                .toList();
     }
 
     public void checkAndSave(List<CountryEntity> countries) {
