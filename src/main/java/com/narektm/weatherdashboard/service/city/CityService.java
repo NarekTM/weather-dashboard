@@ -5,6 +5,7 @@ import com.narektm.weatherdashboard.entity.CityEntity;
 import com.narektm.weatherdashboard.entity.CountryEntity;
 import com.narektm.weatherdashboard.repository.CityRepository;
 import com.narektm.weatherdashboard.service.converter.CityConverter;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,6 +23,7 @@ public class CityService {
         this.cityConverter = cityConverter;
     }
 
+    @Cacheable(cacheNames = "citiesByCountry", key = "#countryId")
     public List<CityDto> getCitiesByCountryId(Long countryId) {
         return cityRepository.findAllByCountryIdAndActiveIsTrue(countryId).stream()
                 .map(cityConverter::toDto)

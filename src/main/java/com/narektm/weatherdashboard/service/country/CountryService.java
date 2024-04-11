@@ -4,6 +4,7 @@ import com.narektm.weatherdashboard.dto.CountryDto;
 import com.narektm.weatherdashboard.entity.CountryEntity;
 import com.narektm.weatherdashboard.repository.CountryRepository;
 import com.narektm.weatherdashboard.service.converter.CountryConverter;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,6 +26,7 @@ public class CountryService {
         return countryRepository.findAll();
     }
 
+    @Cacheable("activeCountries")
     public List<CountryDto> getAllActiveCountries() {
         return countryRepository.findAllByActiveIsTrue().stream()
                 .map(countryConverter::toDto)
