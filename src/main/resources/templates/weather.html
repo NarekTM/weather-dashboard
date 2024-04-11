@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Weather Dashboard</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="icon" type="image/x-icon" href="/icon/favicon.ico">
+</head>
+<body>
+<div class="container mt-5">
+    <h2>Weather Dashboard</h2>
+    <div id="error-message" hidden="hidden" class="alert alert-danger"></div>
+    <form id="weatherForm" onsubmit="updateFormAction()">
+        <div class="form-group">
+            <label for="country">Country</label>
+            <select id="country" class="form-control" onChange="getCitiesByCountry(this.value)">
+                <option value="">Select a Country</option>
+                <option th:each="country : ${countries}" th:value="${country.id}" th:text="${country.name}"></option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="city">City</label>
+            <select id="city" class="form-control">
+                <option value="">Select a City</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="type">Type</label>
+            <select id="type" class="form-control" onChange="updateFormAction()">
+                <option value="current">Current Weather</option>
+                <option value="forecast">Weather Forecast</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Get Weather</button>
+    </form>
+</div>
+<div class="weather-info mt-3">
+    <div th:if="${not #lists.isEmpty(weatherData)}" class="card">
+        <div class="card-body">
+            <h5 class="card-title" th:text="'Current Weather in ' + ${weatherData.city}">Current Weather in
+                CityName</h5>
+            <p class="card-text" th:text="'Temperature: ' + ${weatherData.temperature} + '°C'">Temperature: 18.0°C</p>
+            <p class="card-text" th:text="'UV Index: ' + ${weatherData.uv}">UV Index: 5.0</p>
+            <p class="card-text"
+               th:text="'Gust: ' + ${weatherData.gustKph} + ' kph (' + ${weatherData.gustMph} + ' mph)'">Gust: 18.4 kph
+                (11.4 mph)</p>
+        </div>
+    </div>
+
+    <div th:if="${weatherForecast}" class="weather-forecast mt-4">
+        <h3>Weather Forecast for <span th:text="${weatherForecast[0].city}"></span></h3>
+        <div class="row">
+            <div th:each="forecast : ${weatherForecast}" class="col-sm-12 col-md-4 mb-3">
+                <div class="card forecast-card">
+                    <div class="card-header" th:text="${forecast.date}"></div>
+                    <div class="card-body">
+                        <p class="card-text" th:text="'Max Temp: ' + ${forecast.maxTempC} + '°C'"></p>
+                        <p class="card-text" th:text="'Min Temp: ' + ${forecast.minTempC} + '°C'"></p>
+                        <p class="card-text" th:text="'Avg Temp: ' + ${forecast.avgTempC} + '°C'"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+<div class="fixed-bottom text-right" style="padding-right: 10px; padding-bottom: 10px;">
+    Powered by <a href="https://www.weatherapi.com/" title="Free Weather API">WeatherAPI.com</a>
+</div>
+</body>
+<script th:inline="javascript">
+    function getCitiesByCountry(countryId) {
+        if (!countryId) {
+            populateCityDropdown([]);
+            return;
+        }
+        let savedCities = sessionStorage.getItem('citiesForCountryId' + countryId);
+        if (savedCities) {
+            populateCityDropdown(JSON.parse(savedCities));
+        } else {
+            const url = `/${countryId}/cities`;
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    sessionStorage.setItem('citiesForCountryId' + countryId, JSON.stringify(data));
+                    populateCityDropdown(data);
+                })
+                .catch(error => console.error('Error fetching cities:', error));
+        }
+    }
+
+    function populateCityDropdown(cities) {
+        let citySelect = document.getElementById('city');
+        citySelect.innerHTML = '<option value="-1">Select a City</option>';
+        cities.forEach(city => {
+            citySelect.innerHTML += `<option value="${city.id}">${city.name}</option>`;
+        });
+        const savedCityId = sessionStorage.getItem('selectedCityId');
+        if (savedCityId) {
+            citySelect.value = savedCityId;
+        } else {
+            citySelect.value = -1;
+        }
+    }
+
+    window.onload = function () {
+        restoreFormState();
+    };
+
+    function updateFormAction() {
+        const typeSelect = document.getElementById('type');
+        const selectedType = typeSelect.value;
+        const citySelect = document.getElementById('city');
+        const selectedCityName = citySelect.options[citySelect.selectedIndex].text;
+
+        if (selectedCityName === '' || selectedCityName === 'Select a City') {
+            alert('Please select both a country and a city.');
+            return false;
+        }
+
+        let actionUrl;
+        if (selectedType === 'current') {
+            actionUrl = `/${selectedCityName}/current`;
+        } else if (selectedType === 'forecast') {
+            actionUrl = `/${selectedCityName}/forecast`;
+        }
+
+        const form = document.getElementById('weatherForm');
+        form.action = actionUrl;
+        form.method = 'get';
+    }
+
+    function restoreFormState() {
+        const savedCountryId = sessionStorage.getItem('selectedCountryId');
+        if (savedCountryId) {
+            document.getElementById('country').value = savedCountryId;
+            getCitiesByCountry(savedCountryId);
+        }
+
+        const savedCityId = sessionStorage.getItem('selectedCityId');
+        if (savedCityId) {
+            document.getElementById('city').value = savedCityId;
+        }
+
+        const savedType = sessionStorage.getItem('selectedType');
+        if (savedType) {
+            document.getElementById('type').value = savedType;
+        }
+    }
+
+    document.getElementById('weatherForm').onsubmit = function (event) {
+        const countrySelect = document.getElementById('country');
+        const citySelect = document.getElementById('city');
+        const selectedCountry = countrySelect.value;
+        const selectedCity = citySelect.value;
+        console.log('city', selectedCity);
+
+        if (selectedCountry === '' || selectedCountry === 'Select a Country'
+            || selectedCity === '' || selectedCity === 'Select a City') {
+            event.preventDefault();
+            displayErrorMessage('Please select both a country and a city.');
+            return false;
+        }
+
+        updateFormAction();
+    };
+
+    function displayErrorMessage(message) {
+        const errorMessageDiv = document.getElementById('error-message');
+        errorMessageDiv.textContent = message;
+        errorMessageDiv.hidden = false;
+    }
+
+    document.getElementById('country').addEventListener('change', function () {
+        sessionStorage.setItem('selectedCountryId', this.value);
+    });
+
+    document.getElementById('city').addEventListener('change', function () {
+        sessionStorage.setItem('selectedCityId', this.value);
+    });
+
+    document.getElementById('type').addEventListener('change', function () {
+        sessionStorage.setItem('selectedType', this.value);
+        updateFormAction();
+    });
+</script>
+<style>
+    .forecast-card {
+        padding: 1rem;
+        margin: 0 auto;
+        max-width: 300px;
+    }
+</style>
+</html>
