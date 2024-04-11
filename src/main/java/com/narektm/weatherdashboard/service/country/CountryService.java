@@ -5,7 +5,6 @@ import com.narektm.weatherdashboard.repository.CountryRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class CountryService {
@@ -21,19 +20,17 @@ public class CountryService {
     }
 
     public void checkAndSave(List<CountryEntity> countries) {
-        countries.forEach(country -> {
-            Optional<CountryEntity> existingCountryOpt = countryRepository.findByCca2(country.getCca2());
+        countries.forEach(country -> countryRepository.findByCca2(country.getCca2())
+                .ifPresentOrElse(existingCountry -> checkAndSave(existingCountry, country),
+                        () -> countryRepository.save(country)
+                ));
+    }
 
-            if (existingCountryOpt.isPresent()) {
-                CountryEntity existingCountry = existingCountryOpt.get();
-                if (!existingCountry.equals(country)) {
-                    update(existingCountry, country);
-                    countryRepository.save(existingCountry);
-                }
-            } else {
-                countryRepository.save(country);
-            }
-        });
+    private void checkAndSave(CountryEntity existingCountry, CountryEntity country) {
+        if (!existingCountry.equals(country)) {
+            update(existingCountry, country);
+            countryRepository.save(existingCountry);
+        }
     }
 
     private void update(CountryEntity existingCountry, CountryEntity sourceCountry) {
