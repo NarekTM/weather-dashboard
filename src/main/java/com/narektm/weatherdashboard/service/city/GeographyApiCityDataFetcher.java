@@ -1,8 +1,12 @@
 package com.narektm.weatherdashboard.service.city;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.narektm.weatherdashboard.entity.CityEntity;
 import com.narektm.weatherdashboard.entity.CountryEntity;
-import com.narektm.weatherdashboard.entity.CountryNameEmbeddable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -11,71 +15,70 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static java.util.Objects.nonNull;
+
 /**
- * The RestCountriesDataFetcher class fetches data of all countries
- * from the RestCountries API (<a href="https://restcountries.com/">...</a>)
+ * The GeographyApiCityDataFetcher class fetches all major cities of a country
+ * from the Geography API (<a href="https://apilayer.com/marketplace/geo-api">...</a>)
  */
 @Service
-public class RestCountriesDataFetcher implements CityDataFetcher {
+public class GeographyApiCityDataFetcher implements CityDataFetcher {
 
-    private static final String URL = "https://restcountries.com/v3.1/all";
+    private static final Logger LOGGER = LoggerFactory.getLogger(GeographyApiCityDataFetcher.class);
+
+    private static final String MAJOR_CITIES_OF_COUNTRY_URL_PATTERN = "https://api.apilayer.com/geo/country/cities/%s";
 
     private final RestClient restClient;
 
-    public RestCountriesDataFetcher(RestClient restClient) {
+    private final String apiKey;
+
+    public GeographyApiCityDataFetcher(RestClient restClient,
+                                       @Value("${api-layer.geography.api-key}") String apiKey) {
         this.restClient = restClient;
+        this.apiKey = apiKey;
     }
 
     @Override
-    public List<CountryEntity> fetch() {
-        ResponseEntity<JsonNode> response = restClient.get()
-                .uri(URL)
+    public List<CityEntity> fetch(CountryEntity country) {
+        String countryCca2 = country.getCca2();
+        String url = String.format(MAJOR_CITIES_OF_COUNTRY_URL_PATTERN, countryCca2);
+        ResponseEntity<JsonNode> responseEntity = restClient.get()
+                .uri(url)
+                .header("apikey", apiKey)
                 .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, ((request, response) ->
+                        LOGGER.info("No city found (countryCode: {}", countryCca2)))
                 .toEntity(JsonNode.class);
 
-        if (response.getBody() != null) {
-            return processCountries(response.getBody());
+        JsonNode responseBody = responseEntity.getBody();
+        if (nonNull(responseBody)) {
+            return process(responseBody);
         }
 
         return Collections.emptyList();
     }
 
-    private List<CountryEntity> processCountries(JsonNode countryNodes) {
-        List<CountryEntity> countries = new ArrayList<>();
+    private List<CityEntity> process(JsonNode cityNodes) {
+        List<CityEntity> cities = new ArrayList<>();
 
-        if (countryNodes.isArray()) {
-            for (JsonNode countryNode : countryNodes) {
-                countries.add(mapCountryNodeToEntity(countryNode));
+        if (cityNodes.isArray()) {
+            for (JsonNode cityNode : cityNodes) {
+                cities.add(mapCityNodeToEntity(cityNode));
             }
         }
 
-        return countries;
+        return cities;
     }
 
-    private CountryEntity mapCountryNodeToEntity(JsonNode countryNode) {
-        CountryEntity country = new CountryEntity();
+    private CityEntity mapCityNodeToEntity(JsonNode cityNode) {
+        CityEntity city = new CityEntity();
 
-        country.setCca2(countryNode.path("cca2").asText());
-        country.setCcn3(countryNode.path("ccn3").asText());
-        country.setCca3(countryNode.path("cca3").asText());
+        city.setGeoId(cityNode.path("geo_id").asText());
+        city.setName(cityNode.path("name").asText());
+        city.setStateOrRegion(cityNode.path("state_or_region").asText());
+        city.setLatitude(cityNode.path("latitude").asDouble());
+        city.setLongitude(cityNode.path("longitude").asDouble());
 
-        CountryNameEmbeddable name = new CountryNameEmbeddable();
-        name.setCommon(countryNode.path("name").path("common").asText());
-        name.setOfficial(countryNode.path("name").path("official").asText());
-
-        // Extracting the first native name
-        if (countryNode.path("name").path("nativeName").elements().hasNext()) {
-            JsonNode firstNativeName = countryNode.path("name").path("nativeName").elements().next();
-            name.setCommonNative(firstNativeName.path("common").asText());
-        }
-
-        country.setName(name);
-        country.setCapitalCity(countryNode.path("capital").get(0).asText());
-        country.setRegion(countryNode.path("region").asText());
-        country.setSubRegion(countryNode.path("subregion").asText());
-        country.setPhoneCode(countryNode.path("idd").path("suffixes").get(0).asText());
-        country.setFlagUri(name.getCommon().toLowerCase() + ".png");
-
-        return country;
+        return city;
     }
 }

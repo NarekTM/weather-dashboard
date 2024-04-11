@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: NarekTM
+      comment: Adding initial tables - country, city
+      changes:
+        - sqlFile:
+            encoding: UTF-8
+            path: migrations/V20240407.initial.01-add-initial-tables.sql
+            relativeToChangelogFile: true

@@ -1,31 +1,23 @@
-package com.narektm.weatherdashboard.service;
+package com.narektm.weatherdashboard.service.country;
 
-import com.narektm.weatherdashboard.dto.CountryDto;
 import com.narektm.weatherdashboard.entity.CountryEntity;
 import com.narektm.weatherdashboard.repository.CountryRepository;
-import com.narektm.weatherdashboard.service.converter.CountryConverter;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class CountryService {
 
     private final CountryRepository countryRepository;
-    private final CountryConverter countryConverter;
 
-    public CountryService(CountryRepository countryRepository,
-                          CountryConverter countryConverter) {
+    public CountryService(CountryRepository countryRepository) {
         this.countryRepository = countryRepository;
-        this.countryConverter = countryConverter;
     }
 
-    public List<CountryDto> getAllCountries() {
-        return countryRepository.findAllByActiveIsTrue().stream()
-                .map(countryConverter::toDto)
-                .collect(Collectors.toList());
+    public List<CountryEntity> getAllCountries() {
+        return countryRepository.findAll();
     }
 
     public void checkAndSave(List<CountryEntity> countries) {
@@ -44,14 +36,14 @@ public class CountryService {
         });
     }
 
-    private void update(CountryEntity existingCountry, CountryEntity newCountry) {
-        existingCountry.setCcn3(newCountry.getCcn3());
-        existingCountry.setCca3(newCountry.getCca3());
-        existingCountry.setName(newCountry.getName());
-        existingCountry.setCapitalCity(newCountry.getCapitalCity());
-        existingCountry.setRegion(newCountry.getRegion());
-        existingCountry.setSubRegion(newCountry.getSubRegion());
-        existingCountry.setPhoneCode(newCountry.getPhoneCode());
-        existingCountry.setFlagUri(newCountry.getFlagUri());
+    private void update(CountryEntity existingCountry, CountryEntity sourceCountry) {
+        existingCountry.setCcn3(sourceCountry.getCcn3());
+        existingCountry.setCca3(sourceCountry.getCca3());
+        existingCountry.setName(sourceCountry.getName());
+        existingCountry.setCapitalCity(sourceCountry.getCapitalCity());
+        existingCountry.setRegion(sourceCountry.getRegion());
+        existingCountry.setSubRegion(sourceCountry.getSubRegion());
+        existingCountry.setPhoneCode(sourceCountry.getPhoneCode());
+        existingCountry.setFlagUri(sourceCountry.getFlagUri());
     }
 }

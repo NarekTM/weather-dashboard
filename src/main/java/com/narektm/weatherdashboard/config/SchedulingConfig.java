@@ -1,4 +1,4 @@
-package com.thevirtugroup.scope.calculation.config;
+package com.narektm.weatherdashboard.config;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -7,15 +7,16 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 @Configuration
-//@EnableScheduling
+@EnableScheduling
 @ConditionalOnProperty(name = "scheduling.enabled", matchIfMissing = true)
 public class SchedulingConfig {
 
     @Bean
     public ThreadPoolTaskScheduler taskScheduler() {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
-        scheduler.setPoolSize(10);
+        scheduler.setPoolSize(5);
         scheduler.initialize();
+
         return scheduler;
     }
 }

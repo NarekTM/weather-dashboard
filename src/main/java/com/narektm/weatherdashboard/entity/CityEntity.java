@@ -16,12 +16,13 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.ZonedDateTime;
+import java.util.Objects;
 
 @Entity
 @Table(name = "city")
 @Getter
 @Setter
-public class City {
+public class CityEntity {
 
     private static final String ID_SEQUENCE = "city_id_seq";
 
@@ -30,21 +31,57 @@ public class City {
     @Id
     private Long id;
 
+    @Column(nullable = false, unique = true, length = 50)
+    private String geoId;
+
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
-    private Boolean isActive;
+    @Column(length = 150)
+    private String stateOrRegion;
 
-    @Column(name = "creation_date", nullable = false)
+    @Column(nullable = false)
+    private double latitude;
+
+    @Column(nullable = false)
+    private double longitude;
+
+    @Column(name = "is_active", nullable = false)
+    private boolean active = true;
+
+    @Column(nullable = false)
     @CreationTimestamp
     private ZonedDateTime creationDate;
 
-    @Column(name = "last_modified_date", nullable = false)
+    @Column(nullable = false)
     @UpdateTimestamp
     private ZonedDateTime lastModifiedDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "country_id", referencedColumnName = "id", insertable = false)
-    private Country country;
+    @JoinColumn(name = "country_id", referencedColumnName = "id", updatable = false)
+    private CountryEntity country;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        CityEntity that = (CityEntity) o;
+
+        return Double.compare(latitude, that.latitude) == 0
+                && Double.compare(longitude, that.longitude) == 0
+                && Objects.equals(geoId, that.geoId)
+                && Objects.equals(name, that.name)
+                && Objects.equals(stateOrRegion, that.stateOrRegion);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(geoId, name, stateOrRegion, latitude, longitude);
+    }
 }

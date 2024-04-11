@@ -1,4 +1,4 @@
-package com.narektm.weatherdashboard.service;
+package com.narektm.weatherdashboard.service.country;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.narektm.weatherdashboard.entity.CountryEntity;
@@ -10,10 +10,13 @@ import org.springframework.web.client.RestClient;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+
+import static java.util.Objects.nonNull;
 
 /**
  * The RestCountriesDataFetcher class fetches data of all countries
- * from the RestCountries API (<a href="https://restcountries.com/">...</a>)
+ * from the RestCountries API (<a href="https://restcountries.com">...</a>)
  */
 @Service
 public class RestCountriesDataFetcher implements CountryDataFetcher {
@@ -27,32 +30,34 @@ public class RestCountriesDataFetcher implements CountryDataFetcher {
     }
 
     @Override
-    public List<CountryEntity> fetchCountries() {
+    public List<CountryEntity> fetch() {
         ResponseEntity<JsonNode> response = restClient.get()
                 .uri(URL)
                 .retrieve()
                 .toEntity(JsonNode.class);
 
-        if (response.getBody() != null) {
-            return processCountries(response.getBody());
+        JsonNode responseBody = response.getBody();
+        if (nonNull(responseBody)) {
+            return process(responseBody);
         }
 
         return Collections.emptyList();
     }
 
-    private List<CountryEntity> processCountries(JsonNode countryNodes) {
+    private List<CountryEntity> process(JsonNode countryNodes) {
         List<CountryEntity> countries = new ArrayList<>();
 
         if (countryNodes.isArray()) {
             for (JsonNode countryNode : countryNodes) {
-                countries.add(mapCountryNodeToEntity(countryNode));
+                Optional.ofNullable(countryNode.path("capital").get(0)).ifPresent(capitalCity ->
+                        countries.add(mapCountryNodeToEntity(countryNode, capitalCity)));
             }
         }
 
         return countries;
     }
 
-    private CountryEntity mapCountryNodeToEntity(JsonNode countryNode) {
+    private CountryEntity mapCountryNodeToEntity(JsonNode countryNode, JsonNode capitalCity) {
         CountryEntity country = new CountryEntity();
 
         country.setCca2(countryNode.path("cca2").asText());
@@ -70,12 +75,19 @@ public class RestCountriesDataFetcher implements CountryDataFetcher {
         }
 
         country.setName(name);
-        country.setCapitalCity(countryNode.path("capital").get(0).asText());
+        country.setCapitalCity(capitalCity.asText());
         country.setRegion(countryNode.path("region").asText());
         country.setSubRegion(countryNode.path("subregion").asText());
-        country.setPhoneCode(countryNode.path("idd").path("suffixes").get(0).asText());
+        Optional.of(countryNode.path("idd")).ifPresent(idd -> country.setPhoneCode(getPhoneCode(idd)));
         country.setFlagUri(name.getCommon().toLowerCase() + ".png");
 
         return country;
+    }
+
+    private String getPhoneCode(JsonNode idd) {
+        String root = idd.path("root").asText();
+        String suffix = idd.path("suffixes").get(0).asText();
+
+        return root + suffix;
     }
 }

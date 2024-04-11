@@ -1,10 +1,11 @@
-package com.narektm.weatherdashboard.service.country;
+package com.narektm.weatherdashboard.service.city;
 
+import com.narektm.weatherdashboard.entity.CityEntity;
 import com.narektm.weatherdashboard.entity.CountryEntity;
 
 import java.util.List;
 
-public interface CountryDataFetcher {
+public interface CityDataFetcher {
 
-    List<CountryEntity> fetchCountries();
+    List<CityEntity> fetch(CountryEntity country);
 }

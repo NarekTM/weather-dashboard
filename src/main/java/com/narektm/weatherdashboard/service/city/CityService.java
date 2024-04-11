@@ -1,28 +1,43 @@
-package com.narektm.weatherdashboard.service;
+package com.narektm.weatherdashboard.service.city;
 
-import com.narektm.weatherdashboard.dto.CityDto;
+import com.narektm.weatherdashboard.entity.CityEntity;
+import com.narektm.weatherdashboard.entity.CountryEntity;
 import com.narektm.weatherdashboard.repository.CityRepository;
-import com.narektm.weatherdashboard.service.converter.CityConverter;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Service
 public class CityService {
 
     private final CityRepository cityRepository;
-    private final CityConverter cityConverter;
 
-    public CityService(CityRepository cityRepository,
-                       CityConverter cityConverter) {
+    public CityService(CityRepository cityRepository) {
         this.cityRepository = cityRepository;
-        this.cityConverter = cityConverter;
     }
 
-    public List<CityDto> getCitiesByCountryId(Long countryId) {
-        return cityRepository.findAllByCountryIdAndIsActiveIsTrue(countryId).stream()
-                .map(cityConverter::toDto)
-                .collect(Collectors.toList());
+    public void checkAndSave(List<CityEntity> cities, CountryEntity country) {
+        cities.forEach(city -> {
+            Optional<CityEntity> existingCityOpt = cityRepository.findByCountryAndName(country, city.getName());
+
+            if (existingCityOpt.isPresent()) {
+                CityEntity existingCity = existingCityOpt.get();
+                if (!existingCity.equals(city)) {
+                    update(existingCity, city);
+                    cityRepository.save(existingCity);
+                }
+            } else {
+                city.setCountry(country);
+                cityRepository.save(city);
+            }
+        });
+    }
+
+    private void update(CityEntity existingCity, CityEntity sourceCity) {
+        existingCity.setGeoId(sourceCity.getGeoId());
+        existingCity.setStateOrRegion(sourceCity.getStateOrRegion());
+        existingCity.setLatitude(sourceCity.getLatitude());
+        existingCity.setLongitude(sourceCity.getLongitude());
     }
 }
