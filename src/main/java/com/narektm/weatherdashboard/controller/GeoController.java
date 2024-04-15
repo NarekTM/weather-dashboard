@@ -1,9 +1,11 @@
 package com.narektm.weatherdashboard.controller;
 
 import com.narektm.weatherdashboard.dto.CityDto;
+import com.narektm.weatherdashboard.service.GeoService;
 import com.narektm.weatherdashboard.service.city.CityService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -13,12 +15,25 @@ public class GeoController {
 
     private final CityService cityService;
 
-    public GeoController(CityService cityService) {
+    private final GeoService geoService;
+
+    public GeoController(CityService cityService, GeoService geoService) {
         this.cityService = cityService;
+        this.geoService = geoService;
     }
 
     @GetMapping("/{countryId}/cities")
     public List<CityDto> getCitiesByCountry(@PathVariable Long countryId) {
         return cityService.getCitiesByCountryId(countryId);
+    }
+
+    @PostMapping("/countries")
+    public void fetchAndStoreCountries() {
+        geoService.fetchAndStoreCountries();
+    }
+
+    @PostMapping("/cities")
+    public void fetchAndStoreCities() {
+        geoService.fetchAndStoreCities();
     }
 }
