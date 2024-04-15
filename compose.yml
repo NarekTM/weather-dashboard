@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:15.6
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=weather_dashboard
+    ports:
+      - '5432:5432'
+    volumes:
+      - weather_dashboard_db:/var/lib/postgresql/data
+volumes:
+  weather_dashboard_db:
+    driver: local
