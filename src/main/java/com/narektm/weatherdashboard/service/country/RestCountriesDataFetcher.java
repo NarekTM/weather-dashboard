@@ -3,6 +3,7 @@ package com.narektm.weatherdashboard.service.country;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.narektm.weatherdashboard.entity.CountryEntity;
 import com.narektm.weatherdashboard.entity.CountryNameEmbeddable;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -21,18 +22,20 @@ import static java.util.Objects.nonNull;
 @Service
 public class RestCountriesDataFetcher implements CountryDataFetcher {
 
-    private static final String URL = "https://restcountries.com/v3.1/all";
+    private final String baseUrl;
 
     private final RestClient restClient;
 
-    public RestCountriesDataFetcher(RestClient restClient) {
+    public RestCountriesDataFetcher(@Value("${rest-countries.base.url}") String baseUrl,
+                                    RestClient restClient) {
         this.restClient = restClient;
+        this.baseUrl = baseUrl;
     }
 
     @Override
     public List<CountryEntity> fetch() {
         ResponseEntity<JsonNode> response = restClient.get()
-                .uri(URL)
+                .uri(baseUrl + "/v3.1/all")
                 .retrieve()
                 .toEntity(JsonNode.class);
 

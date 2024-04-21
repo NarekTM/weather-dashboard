@@ -94,18 +94,17 @@ public class CountryEntity {
         CountryEntity that = (CountryEntity) o;
 
         return Objects.equals(cca2, that.cca2)
-                && Objects.equals(ccn3, that.ccn3)
-                && Objects.equals(cca3, that.cca3)
-                && Objects.equals(name, that.name)
-                && Objects.equals(capitalCity, that.capitalCity)
-                && Objects.equals(region, that.region)
-                && Objects.equals(subRegion, that.subRegion)
-                && Objects.equals(phoneCode, that.phoneCode)
-                && Objects.equals(flagUri, that.flagUri);
+               && Objects.equals(ccn3, that.ccn3)
+               && Objects.equals(cca3, that.cca3)
+               && Objects.equals(name, that.name)
+               && Objects.equals(capitalCity, that.capitalCity)
+               && Objects.equals(region, that.region)
+               && Objects.equals(subRegion, that.subRegion)
+               && Objects.equals(phoneCode, that.phoneCode);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(cca2, ccn3, cca3, name, capitalCity, region, subRegion, phoneCode, flagUri);
+        return Objects.hash(cca2, ccn3, cca3, name, capitalCity, region, subRegion, phoneCode);
     }
 }

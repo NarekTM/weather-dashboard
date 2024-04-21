@@ -3,9 +3,11 @@ package com.narektm.weatherdashboard.controller;
 import com.narektm.weatherdashboard.dto.CityDto;
 import com.narektm.weatherdashboard.service.GeoService;
 import com.narektm.weatherdashboard.service.city.CityService;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -28,11 +30,13 @@ public class GeoController {
     }
 
     @PostMapping("/countries")
+    @ResponseStatus(HttpStatus.ACCEPTED)
     public void fetchAndStoreCountries() {
         geoService.fetchAndStoreCountries();
     }
 
     @PostMapping("/cities")
+    @ResponseStatus(HttpStatus.ACCEPTED)
     public void fetchAndStoreCities() {
         geoService.fetchAndStoreCities();
     }

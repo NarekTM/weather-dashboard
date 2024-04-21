@@ -26,22 +26,24 @@ public class GeographyApiCityDataFetcher implements CityDataFetcher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GeographyApiCityDataFetcher.class);
 
-    private static final String MAJOR_CITIES_OF_COUNTRY_URL_PATTERN = "https://api.apilayer.com/geo/country/cities/%s";
-
-    private final RestClient restClient;
+    private final String baseUrl;
 
     private final String apiKey;
 
+    private final RestClient restClient;
+
     public GeographyApiCityDataFetcher(RestClient restClient,
-                                       @Value("${api-layer.geography.api-key}") String apiKey) {
+                                       @Value("${api-layer.geography.api-key}") String apiKey,
+                                       @Value("${api-layer.base.url}") String baseUrl) {
         this.restClient = restClient;
         this.apiKey = apiKey;
+        this.baseUrl = baseUrl;
     }
 
     @Override
     public List<CityEntity> fetch(CountryEntity country) {
         String countryCca2 = country.getCca2();
-        String url = String.format(MAJOR_CITIES_OF_COUNTRY_URL_PATTERN, countryCca2);
+        String url = baseUrl + "/geo/country/cities/" + countryCca2;
         ResponseEntity<JsonNode> responseEntity = restClient.get()
                 .uri(url)
                 .header("apikey", apiKey)
